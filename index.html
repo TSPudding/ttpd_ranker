@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="author" content="TSPudding🍮">
+<title>TTPD Song Ranker — by TSPudding🍮</title>
+<style>
+:root{--cream:#f5f0e6;--cream-dark:#e8dfd0;--brown:#2c1810;--brown-light:#5c3d2e;--gold:#b8956a;--gold-light:#d4b896;--gold-dark:#8b6f47;--blush:#c9a0a0;--sage:#7a8b7a;--card-bg:rgba(255,252,245,0.94);--card-border:rgba(184,149,106,0.35);--shadow:0 4px 24px rgba(44,24,16,0.1);--shadow-lg:0 12px 40px rgba(44,24,16,0.14);--radius:16px;--radius-sm:10px;--font-heading:'Georgia','Times New Roman','Noto Serif CJK SC','STSong','Songti SC',serif;--font-body:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;--transition:0.35s cubic-bezier(0.4,0,0.2,1)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;width:100%;overflow-x:hidden;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-body);background:var(--cream);color:var(--brown);display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:100vh;min-height:-webkit-fill-available;padding:16px;position:relative}
+body::before{content:'';position:fixed;inset:0;z-index:0;background:linear-gradient(180deg,rgba(245,240,230,0.45) 0%,rgba(245,240,230,0.65) 40%,rgba(245,240,230,0.82) 100%),url('https://upload.wikimedia.org/wikipedia/en/5/5d/Taylor_Swift_-_The_Tortured_Poets_Department_%28album_cover%29.png') center/cover no-repeat;filter:saturate(0.6) brightness(1.05);opacity:0.7}
+#app{position:relative;z-index:1;width:100%;max-width:560px;display:flex;flex-direction:column;gap:20px;flex:1;justify-content:center}
+.screen{display:none;flex-direction:column;gap:20px;animation:fadeSlideIn .5s ease}
+.screen.active{display:flex}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--card-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--card-border);border-radius:var(--radius);padding:28px 24px;box-shadow:var(--shadow)}
+.start-header{text-align:center}
+.start-header .album-title{font-family:var(--font-heading);font-size:clamp(1.3rem,4vw,1.75rem);font-weight:400;letter-spacing:.04em;color:var(--brown);line-height:1.3;margin-bottom:6px}
+.start-header .album-subtitle{font-family:var(--font-heading);font-size:.9rem;color:var(--brown-light);font-style:italic;letter-spacing:.06em}
+.start-info{text-align:center;color:var(--brown-light);font-size:.92rem;line-height:1.7}
+.start-info .icon-row{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:.8rem;color:var(--gold-dark)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:100px;padding:14px 28px;font-family:var(--font-heading);font-size:.95rem;letter-spacing:.03em;cursor:pointer;transition:var(--transition);-webkit-user-select:none;user-select:none;touch-action:manipulation;min-height:48px}
+.btn:active{transform:scale(0.96)}
+.btn-primary{background:var(--brown);color:var(--cream);box-shadow:var(--shadow);width:100%;font-size:1.04rem;letter-spacing:.06em}
+.btn-primary:hover,.btn-primary:focus-visible{background:#3d2318;box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+.btn-continue{background:var(--gold);color:#fff;box-shadow:var(--shadow);width:100%;font-size:1.04rem;letter-spacing:.06em}
+.btn-continue:hover,.btn-continue:focus-visible{background:var(--gold-dark);box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+.btn-secondary{background:transparent;color:var(--brown-light);border:1.5px solid var(--card-border);font-size:.85rem}
+.btn-secondary:hover,.btn-secondary:focus-visible{background:rgba(184,149,106,0.12)}
+.btn-small{padding:8px 16px;font-size:.78rem;min-height:34px}
+.btn-danger{background:transparent;color:#a06050;border:1px solid rgba(160,96,80,0.3)}.btn-danger:hover{background:rgba(160,96,80,0.08)}
+.saved-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(184,149,106,0.15);color:var(--gold-dark);padding:4px 12px;border-radius:100px;font-size:.75rem;margin-top:4px}
+.history-section h3{font-family:var(--font-heading);font-size:.92rem;color:var(--brown-light);margin-bottom:12px;letter-spacing:.04em}
+.history-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(184,149,106,0.18);gap:10px;transition:background .2s}
+.history-item:last-child{border-bottom:none}.history-item:hover{background:rgba(184,149,106,0.06)}
+.history-date{font-size:.76rem;color:var(--gold-dark);white-space:nowrap}
+.history-preview{flex:1;font-size:.8rem;color:var(--brown-light);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.history-actions{display:flex;gap:6px;flex-shrink:0}
+.history-actions .btn-small{padding:6px 12px;font-size:.72rem;min-height:30px}
+.no-history{text-align:center;color:var(--gold-dark);font-size:.82rem;font-style:italic;padding:16px}
+.ranking-header{display:flex;flex-direction:column;gap:12px}
+.progress-wrap{width:100%}
+.progress-label{display:flex;justify-content:space-between;font-size:.76rem;color:var(--brown-light);margin-bottom:6px}
+.progress-bar{height:8px;background:var(--cream-dark);border-radius:100px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--blush));border-radius:100px;transition:width .5s ease;width:0%}
+.toolbar-row{display:flex;gap:8px;flex-wrap:wrap}
+.toolbar-row .btn{flex:1;font-family:var(--font-body);font-size:.78rem;padding:10px 14px;min-height:38px}
+.comparison-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.song-card{background:var(--card-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:2px solid transparent;border-radius:var(--radius);padding:clamp(20px,5vw,32px) clamp(14px,3vw,20px);text-align:center;cursor:pointer;transition:var(--transition);box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:140px;touch-action:manipulation;position:relative;overflow:hidden}
+.song-card:active{transform:scale(0.97)}
+.song-card.card-a{border-color:rgba(184,149,106,0.25)}
+.song-card.card-b{border-color:rgba(201,160,160,0.25)}
+.song-card.card-a:hover,.song-card.card-a:focus-visible{border-color:var(--gold);box-shadow:0 6px 28px rgba(184,149,106,0.18)}
+.song-card.card-b:hover,.song-card.card-b:focus-visible{border-color:var(--blush);box-shadow:0 6px 28px rgba(201,160,160,0.18)}
+.song-card .card-label{font-family:var(--font-heading);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;opacity:.6}
+.song-card.card-a .card-label{color:var(--gold-dark)}
+.song-card.card-b .card-label{color:var(--blush)}
+.song-card .song-title{font-family:var(--font-heading);font-size:clamp(1rem,3.5vw,1.25rem);line-height:1.35;color:var(--brown);word-break:break-word;letter-spacing:.02em}
+.song-card .kb-hint{font-size:.68rem;color:var(--gold-dark);opacity:.5;letter-spacing:.05em}
+.vs-divider{display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:.85rem;color:var(--brown-light);opacity:.5;letter-spacing:.1em;padding:4px 0}
+.action-buttons{display:flex;gap:10px;flex-wrap:wrap}
+.action-buttons .btn{flex:1;min-width:0;font-size:.85rem;padding:12px 16px;letter-spacing:.04em}
+.btn-choose-a{background:var(--gold);color:#fff}.btn-choose-a:hover{background:var(--gold-dark)}
+.btn-choose-b{background:var(--blush);color:#fff}.btn-choose-b:hover{background:#b58585}
+.btn-both{background:var(--sage);color:#fff}.btn-both:hover{background:#5a6b5a}
+.btn-skip{background:transparent;color:var(--brown-light);border:1.5px solid var(--card-border)}.btn-skip:hover{background:rgba(184,149,106,0.1)}
+.results-header{text-align:center}
+.results-header h2{font-family:var(--font-heading);font-size:1.3rem;color:var(--brown);letter-spacing:.04em;margin-bottom:4px}
+.results-header .results-date{font-size:.78rem;color:var(--gold-dark)}
+.results-list{display:flex;flex-direction:column;gap:0}
+.rank-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid rgba(184,149,106,0.12);transition:background .2s}
+.rank-item:last-child{border-bottom:none}.rank-item:hover{background:rgba(184,149,106,0.05)}
+.rank-item.tied{background:rgba(184,149,106,0.06)}
+.rank-num{font-family:var(--font-heading);font-size:1.05rem;font-weight:700;color:var(--brown);min-width:36px;text-align:center;flex-shrink:0}
+.rank-item.tied .rank-num{color:var(--gold-dark)}
+.rank-title{flex:1;font-size:.9rem;color:var(--brown);line-height:1.4;min-width:0}
+.rank-item.tied .rank-title{color:var(--brown-light)}
+.tie-badge{font-family:var(--font-body);font-size:.68rem;color:var(--gold-dark);background:rgba(184,149,106,0.12);padding:2px 8px;border-radius:100px;white-space:nowrap;flex-shrink:0}
+.rank-item:not(.tied) .tie-badge{display:none}
+.results-actions{display:flex;gap:10px;flex-wrap:wrap}.results-actions .btn{flex:1}
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--brown);color:var(--cream);padding:12px 24px;border-radius:100px;font-family:var(--font-body);font-size:.88rem;z-index:100;opacity:0;transition:transform .4s cubic-bezier(0.175,0.885,0.32,1.275),opacity .3s;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* ===== 创作者署名 ===== */
+.footer-credit{
+  position:relative;z-index:2;text-align:center;padding:8px 0 4px;
+  font-family:var(--font-heading);font-size:.72rem;color:var(--gold-dark);
+  opacity:.6;letter-spacing:.05em;user-select:none;flex-shrink:0
+}
+.footer-credit a{color:var(--gold-dark);text-decoration:none;border-bottom:1px dashed rgba(184,149,106,0.3)}
+.footer-credit a:hover{color:var(--brown-light);border-color:var(--brown-light)}
+
+/* 右下角水印 */
+.watermark{
+  position:fixed;bottom:16px;right:24px;z-index:0;
+  font-family:var(--font-heading);font-size:.68rem;color:var(--gold-dark);
+  opacity:.22;letter-spacing:.06em;pointer-events:none;user-select:none;
+  transform:rotate(-2deg)
+}
+
+/* 移动端适配 */
+@media(max-width:600px){body{padding:12px;align-items:flex-start;padding-top:20px}.card{padding:20px 16px;border-radius:var(--radius-sm)}.comparison-cards{grid-template-columns:1fr;gap:10px}.song-card{min-height:100px;padding:18px 16px}.song-card .song-title{font-size:1.05rem}.action-buttons{gap:8px}.action-buttons .btn{font-size:.8rem;padding:10px 12px}.vs-divider{padding:0}.toolbar-row{gap:6px}.toolbar-row .btn{font-size:.74rem;padding:8px 10px;min-height:34px}.watermark{bottom:10px;right:14px;font-size:.62rem}.footer-credit{font-size:.68rem}}
+@media(max-width:380px){body{padding:8px;padding-top:12px}.card{padding:16px 12px}.song-card{min-height:80px;padding:14px 12px}.song-card .song-title{font-size:.95rem}.action-buttons .btn{font-size:.75rem;padding:10px 8px;min-height:40px}}
+@media(min-width:768px) and (max-width:1024px){#app{max-width:640px}}
+@media(max-height:500px) and (orientation:landscape){body{padding:8px}#app{gap:10px;max-width:90vw}.card{padding:14px 18px}.comparison-cards{grid-template-columns:1fr 1fr;gap:10px}.song-card{min-height:70px;padding:12px}}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:4px}.song-card:focus-visible{outline:none}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- ===== 首页 ===== -->
+  <div id="screen-start" class="screen active">
+    <div class="card start-header"><div class="album-title">The Tortured Poets Department</div><div class="album-subtitle">The Anthology · 31 Songs</div></div>
+    <div class="card start-info">
+      <p>通过<b>两两比较</b>，为 31 首歌排出你的个人喜好排行。</p>
+      <div class="icon-row"><span>🅰️ 选 A</span><span>🅱️ 选 B</span><span>🤝 都喜欢</span><span>⏭️ 跳过</span></div>
+      <p style="margin-top:8px;font-size:.76rem;color:var(--gold-dark)">⌨️ ← → ↑ ↓ 或 A D W S · 支持撤销、保存并续做</p>
+    </div>
+    <div id="saved-progress-banner" style="display:none">
+      <button class="btn btn-continue" id="btn-resume" onclick="resumeRanking()">✨ 继续上次排序</button>
+      <div style="text-align:center;margin-top:4px"><span class="saved-badge" id="saved-progress-info"></span></div>
+    </div>
+    <button class="btn btn-primary" id="btn-start" onclick="startRanking()">🆕 开始全新排序</button>
+    <div id="history-section" class="card history-section" style="display:none">
+      <h3>📜 已完成的历史排行</h3><div id="history-list"></div>
+    </div>
+    <div class="footer-credit">© 2026 <a href="#" onclick="return false" title="TSPudding🍮">TSPudding🍮</a> · All rights reserved</div>
+  </div>
+
+  <!-- ===== 排序中 ===== -->
+  <div id="screen-ranking" class="screen">
+    <div class="card ranking-header">
+      <div class="progress-wrap"><div class="progress-label"><span>排序进度</span><span id="progress-text">0 / ~125</span></div><div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div></div>
+      <div class="toolbar-row"><button class="btn btn-secondary btn-small" id="btn-undo" onclick="handleUndo()" disabled>↩️ 撤销</button><button class="btn btn-secondary btn-small" id="btn-save-exit" onclick="saveAndExit()">💾 保存并退出</button></div>
+    </div>
+    <div class="comparison-cards" id="comparison-cards">
+      <div class="song-card card-a" id="card-a" tabindex="0" onclick="handleChoice('a')"><span class="card-label">Song A</span><span class="song-title" id="song-a-title"></span><span class="kb-hint">← · A 键</span></div>
+      <div class="song-card card-b" id="card-b" tabindex="0" onclick="handleChoice('b')"><span class="card-label">Song B</span><span class="song-title" id="song-b-title"></span><span class="kb-hint">→ · D 键</span></div>
+    </div>
+    <div class="vs-divider">— VS —</div>
+    <div class="action-buttons"><button class="btn btn-choose-a" onclick="handleChoice('a')">选 A</button><button class="btn btn-choose-b" onclick="handleChoice('b')">选 B</button></div>
+    <div class="action-buttons"><button class="btn btn-both" onclick="handleChoice('both')">🤝 都喜欢</button><button class="btn btn-skip" onclick="handleChoice('skip')">⏭️ 跳过</button></div>
+    <div class="footer-credit">© 2026 <a href="#" onclick="return false" title="TSPudding🍮">TSPudding🍮</a> · All rights reserved</div>
+  </div>
+
+  <!-- ===== 结果页 ===== -->
+  <div id="screen-results" class="screen">
+    <div class="card results-header"><h2>🏆 你的 TTPD 排行榜</h2><div class="results-date" id="results-date"></div></div>
+    <div class="card" id="results-list-card"><div class="results-list" id="results-list"></div></div>
+    <div class="results-actions"><button class="btn btn-primary" onclick="copyResults()">📋 复制结果</button><button class="btn btn-secondary" onclick="restartRanking()">🔄 重新排序</button></div>
+    <button class="btn btn-secondary" onclick="showStartScreen()" style="margin-top:4px">🏠 返回首页</button>
+    <div class="footer-credit">© 2026 <a href="#" onclick="return false" title="TSPudding🍮">TSPudding🍮</a> · All rights reserved</div>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<!-- 全局水印 -->
+<div class="watermark">TSPudding🍮</div>
+
+<script>
+/* ===================================================================
+ *  TTPD Song Ranker — Created by TSPudding🍮
+ *  纯同步 MergeSortEngine 驱动 · 归并排序两两比较
+ * =================================================================== */
+'use strict';
+var CREATOR = 'TSPudding🍮';
+var SONGS = ['Fortnight (feat. Post Malone)','The Tortured Poets Department','My Boy Only Breaks His Favorite Toys','Down Bad','So Long, London','But Daddy I Love Him','Fresh Out the Slammer','Florida!!! (feat. Florence + The Machine)','Guilty as Sin?',"Who's Afraid of Little Old Me?",'I Can Fix Him (No Really I Can)','loml','I Can Do It With a Broken Heart','The Smallest Man Who Ever Lived','The Alchemy','Clara Bow','The Black Dog','imgonnagetyouback','The Albatross','Chloe or Sam or Sophia or Marcus','How Did It End?','So High School','I Hate It Here','thanK you aIMee',"I Look in People's Windows",'The Prophecy','Cassandra','Peter','The Bolter','Robin','The Manuscript'];
+var HISTORY_KEY = 'ttpd_ranking_history';
+var PROGRESS_KEY = 'ttpd_sort_progress';
+var MAX_HISTORY = 8;
+var EST_MAX = 125;
+
+/* ===== MergeSortEngine ===== */
+function MergeSortEngine(items) {
+  this.root = this._mkSort(items.map(function(it){return{id:it.id,title:it.title,tiedWithNext:it.tiedWithNext||false}}));
+  this.stack = [this.root];
+  this.cmpCount = 0;
+}
+MergeSortEngine.prototype._mkSort = function(arr){ return {type:'sort',arr:arr,mid:0,left:null,right:null,merge:null,result:null,phase:'start'}; };
+MergeSortEngine.prototype._mkMerge = function(l,r){ return {type:'merge',left:l,right:r,result:[],i:0,j:0}; };
+
+MergeSortEngine.prototype.next = function() {
+  while (this.stack.length > 0) {
+    var t = this.stack[this.stack.length - 1];
+    if (t.type === 'sort') {
+      switch (t.phase) {
+        case 'start':
+          if (t.arr.length <= 1) { t.result = t.arr; this.stack.pop(); break; }
+          t.mid = Math.floor(t.arr.length / 2);
+          t.left = this._mkSort(t.arr.slice(0, t.mid));
+          this.stack.push(t.left);
+          t.phase = 'wait_left';
+          break;
+        case 'wait_left':
+          t.right = this._mkSort(t.arr.slice(t.mid));
+          this.stack.push(t.right);
+          t.phase = 'wait_right';
+          break;
+        case 'wait_right':
+          t.merge = this._mkMerge(t.left.result, t.right.result);
+          this.stack.push(t.merge);
+          t.phase = 'wait_merge';
+          break;
+        case 'wait_merge':
+          t.result = t.merge.result;
+          this.stack.pop();
+          break;
+      }
+      continue;
+    }
+    if (t.type === 'merge') {
+      if (t.i < t.left.length && t.j < t.right.length) {
+        this.cmpCount++;
+        return {status:'compare', songA:t.left[t.i], songB:t.right[t.j]};
+      }
+      while (t.i < t.left.length)  t.result.push(t.left[t.i++]);
+      while (t.j < t.right.length) t.result.push(t.right[t.j++]);
+      this.stack.pop();
+      continue;
+    }
+  }
+  return {status:'done', result:this.root.result};
+};
+
+MergeSortEngine.prototype.resolve = function(choice) {
+  var t = this.stack[this.stack.length - 1];
+  if (!t || t.type !== 'merge') return this.next();
+  var a = choice;
+  if (choice === 'skip') a = Math.random() < 0.5 ? 'skip-left' : 'skip-right';
+  switch (a) {
+    case 'a':  t.result.push(t.left[t.i++]); break;
+    case 'b':  t.result.push(t.right[t.j++]); break;
+    case 'both': t.result.push({id:t.left[t.i].id,title:t.left[t.i].title,tiedWithNext:true}); t.result.push(t.right[t.j]); t.i++; t.j++; break;
+    case 'skip-left':  t.result.push(t.left[t.i++]); break;
+    case 'skip-right': t.result.push(t.right[t.j++]); break;
+    default: t.result.push(t.left[t.i++]); break;
+  }
+  return this.next();
+};
+
+MergeSortEngine.replay = function(items, history) {
+  var eng = new MergeSortEngine(items);
+  for (var i = 0; i < history.length; i++) {
+    var r = eng.resolve(history[i]);
+    if (r.status === 'done') return {engine:eng, nextResult:r, done:true};
+  }
+  var r = eng.next();
+  return {engine:eng, nextResult:r, done:r.status === 'done'};
+};
+
+/* ===== 全局状态 ===== */
+var engine = null, history = [], totalCmp = 0, isActive = false;
+
+function mkItems() { return SONGS.map(function(t,id){ return {id:id,title:t,tiedWithNext:false}; }); }
+
+function startEngine(items, hist) {
+  var res = MergeSortEngine.replay(items, hist);
+  engine = res.engine; totalCmp = engine.cmpCount;
+  if (res.done || res.nextResult.status === 'done') { finishRanking(res.nextResult.result); return; }
+  isActive = true;
+  showScreen('ranking');
+  updateProgressUI(); updateUndoBtn();
+  showComparison(res.nextResult.songA, res.nextResult.songB);
+}
+
+function handleChoice(choice) {
+  if (!isActive || !engine) return;
+  var a = choice;
+  if (choice === 'skip') a = Math.random() < 0.5 ? 'skip-left' : 'skip-right';
+  history.push(a);
+  var r = engine.resolve(a);
+  totalCmp = engine.cmpCount;
+  saveProgress(); updateProgressUI(); updateUndoBtn();
+  if (r.status === 'done') { finishRanking(r.result); }
+  else { showComparison(r.songA, r.songB); }
+}
+
+function handleUndo() {
+  if (!isActive || history.length === 0) return;
+  history.pop();
+  var res = MergeSortEngine.replay(mkItems(), history);
+  engine = res.engine; totalCmp = engine.cmpCount;
+  saveProgress(); updateProgressUI(); updateUndoBtn();
+  if (res.done || res.nextResult.status === 'done') { finishRanking(res.nextResult.result); }
+  else { showComparison(res.nextResult.songA, res.nextResult.songB); }
+}
+
+function finishRanking(sortedArr) {
+  isActive = false; engine = null;
+  var ranked = computeRanks(sortedArr);
+  showScreen('results'); renderResults(ranked);
+  saveToHistory(ranked); clearProgress(); history = [];
+}
+
+function startRanking() { history = []; clearProgress(); startEngine(mkItems(), []); }
+function restartRanking() { startRanking(); }
+function saveAndExit() {
+  if (history.length === 0) { showToast('还没有进行任何比较'); return; }
+  isActive = false; engine = null;
+  saveProgress(); showToast('✅ 进度已保存'); showStartScreen();
+}
+function resumeRanking() {
+  var s = loadProgress();
+  if (!s || !s.choiceHistory || s.choiceHistory.length === 0) { showToast('没有可恢复的进度'); return; }
+  startEngine(mkItems(), s.choiceHistory);
+}
+
+/* ===== UI ===== */
+function showComparison(a, b) {
+  document.getElementById('song-a-title').textContent = a.title;
+  document.getElementById('song-b-title').textContent = b.title;
+  var ca = document.getElementById('card-a'), cb = document.getElementById('card-b');
+  ca.style.animation = 'none'; cb.style.animation = 'none'; ca.offsetHeight; cb.offsetHeight;
+  ca.style.animation = 'fadeSlideIn .35s ease'; cb.style.animation = 'fadeSlideIn .35s ease';
+}
+function updateProgressUI() {
+  var p = Math.min((totalCmp / EST_MAX) * 100, 100);
+  document.getElementById('progress-fill').style.width = p + '%';
+  document.getElementById('progress-text').textContent = totalCmp + ' / ~' + EST_MAX;
+}
+function updateUndoBtn() { document.getElementById('btn-undo').disabled = history.length === 0; }
+function computeRanks(s) {
+  var r = [], rank = 1, i = 0;
+  while (i < s.length) { var e = i; while (e < s.length - 1 && s[e].tiedWithNext) e++; for (var k = i; k <= e; k++) r.push({id:s[k].id,title:s[k].title,tiedWithNext:s[k].tiedWithNext,displayRank:rank,isTied:e>i}); rank = e + 2; i = e + 1; }
+  return r;
+}
+function renderResults(r) {
+  document.getElementById('results-list').innerHTML = r.map(function(s){ return '<div class="rank-item'+(s.isTied?' tied':'')+'"><span class="rank-num">'+s.displayRank+'</span><span class="rank-title">'+esc(s.title)+'</span>'+(s.isTied?'<span class="tie-badge">并列</span>':'')+'</div>'; }).join('');
+  var n = new Date();
+  document.getElementById('results-date').textContent = n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+' '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+}
+function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function showScreen(n) { document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); }); document.getElementById('screen-'+n).classList.add('active'); }
+function showStartScreen() { isActive = false; engine = null; showScreen('start'); refreshStartScreen(); }
+
+var toastT;
+function showToast(m) { var t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function(){ t.classList.remove('show'); }, 2200); }
+
+function saveProgress() { try { localStorage.setItem(PROGRESS_KEY, JSON.stringify({choiceHistory:history,savedAt:new Date().toISOString()})); } catch(e){} }
+function loadProgress() { try { var r = localStorage.getItem(PROGRESS_KEY); return r ? JSON.parse(r) : null; } catch(e) { return null; } }
+function clearProgress() { localStorage.removeItem(PROGRESS_KEY); }
+
+function saveToHistory(r) {
+  var e = { date: new Date().toISOString(), rankings: r.map(function(s){ return {rank:s.displayRank,title:s.title,isTied:s.isTied}; }) };
+  var h = []; try { h = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch(e) {}
+  h.unshift(e); if (h.length > MAX_HISTORY) h = h.slice(0, MAX_HISTORY);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
+}
+function loadHistory() {
+  var h = []; try { h = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch(e) {}
+  var sec = document.getElementById('history-section'), lst = document.getElementById('history-list');
+  if (!h.length) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  lst.innerHTML = h.map(function(e, i) {
+    var d = new Date(e.date), ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    var t3 = e.rankings.slice(0, 3).map(function(r){ return r.title; }).join(' · ');
+    return '<div class="history-item"><span class="history-date">'+ds+'</span><span class="history-preview" title="'+esc(e.rankings.map(function(r){ return '#'+r.rank+' '+r.title; }).join(' / '))+'">🥇 '+esc(t3)+'</span><div class="history-actions"><button class="btn btn-secondary btn-small" onclick="loadHistoryEntry('+i+')">查看</button><button class="btn btn-danger btn-small" onclick="deleteHistoryEntry('+i+')">删除</button></div></div>';
+  }).join('');
+}
+function loadHistoryEntry(i) {
+  var h = []; try { h = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch(e) { return; }
+  if (i < 0 || i >= h.length) return;
+  var e = h[i], r = e.rankings.map(function(r){ return {id:0,title:r.title,tiedWithNext:false,displayRank:r.rank,isTied:r.isTied}; });
+  showScreen('results'); renderResults(r);
+  var d = new Date(e.date);
+  document.getElementById('results-date').textContent = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' (历史记录)';
+}
+function deleteHistoryEntry(i) {
+  var h = []; try { h = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch(e) { return; }
+  if (i < 0 || i >= h.length) return;
+  h.splice(i, 1); localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); loadHistory(); showToast('已删除');
+}
+function copyResults() {
+  var items = document.querySelectorAll('#results-list .rank-item');
+  if (!items.length) return;
+  var t = '🏆 THE TORTURED POETS DEPARTMENT (THE ANTHOLOGY) · 个人喜好排行\n' + '─'.repeat(44) + '\n';
+  items.forEach(function(it){ var r = it.querySelector('.rank-num').textContent, ti = it.querySelector('.rank-title').textContent, td = it.classList.contains('tied'); t += String(r).padStart(2,' ') + '. ' + ti + (td ? '  [并列]' : '') + '\n'; });
+  t += '\n— Created by ' + CREATOR;
+  if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t).then(function(){ showToast('✅ 已复制到剪贴板！'); }); }
+  else { var ta = document.createElement('textarea'); ta.value = t; ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); showToast('✅ 已复制到剪贴板！'); } catch(e) { showToast('⚠️ 复制失败'); } document.body.removeChild(ta); }
+}
+function refreshStartScreen() {
+  loadHistory();
+  var s = loadProgress(), banner = document.getElementById('saved-progress-banner'), btn = document.getElementById('btn-start');
+  if (s && s.choiceHistory && s.choiceHistory.length > 0) {
+    banner.style.display = '';
+    document.getElementById('saved-progress-info').textContent = '已保存 ' + s.choiceHistory.length + ' 次比较 · ' + (s.savedAt ? fmtDate(s.savedAt) : '');
+    btn.textContent = '🆕 开始全新排序（会丢弃当前进度）';
+    btn.classList.add('btn-secondary'); btn.classList.remove('btn-primary');
+  } else {
+    banner.style.display = 'none';
+    btn.textContent = '✨ 开始排序';
+    btn.classList.add('btn-primary'); btn.classList.remove('btn-secondary');
+  }
+}
+function fmtDate(iso) { if (!iso) return ''; var d = new Date(iso); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+
+document.addEventListener('keydown', function(e) {
+  if (!isActive) return;
+  switch (e.key) {
+    case 'ArrowLeft': case 'a': case 'A': e.preventDefault(); handleChoice('a'); break;
+    case 'ArrowRight': case 'd': case 'D': e.preventDefault(); handleChoice('b'); break;
+    case 'ArrowUp': case 'w': case 'W': e.preventDefault(); handleChoice('both'); break;
+    case 'ArrowDown': case 's': case 'S': e.preventDefault(); handleChoice('skip'); break;
+  }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  refreshStartScreen();
+  document.querySelectorAll('.btn,.song-card').forEach(function(el){ el.addEventListener('touchstart', function(){}, {passive:true}); });
+});
+</script>
+</body>
+</html>
